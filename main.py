@@ -6,7 +6,14 @@ import re
 import time
 app = Flask(__name__)
 
-g_xmlForm = '<xml><ToUserName><![CDATA[{ToUserName}]]></ToUserName>\n<FromUserName><![CDATA[{FromUserName}]]></FromUserName>\n<CreateTime>{CreateTime}</CreateTime>\n<Content><![CDATA[{Content}]]></Content>\n</xml>'
+g_xmlForm = '''
+<xml>
+<ToUserName><![CDATA[{ToUserName}]]></ToUserName>
+<FromUserName><![CDATA[{FromUserName}]]></FromUserName>
+<CreateTime>{CreateTime}</CreateTime>
+<MsgType><![CDATA[text]]></MsgType>
+<Content><![CDATA[{Content}]]></Content>
+</xml>'''
 
 class Msg(object):
     def __init__(self):
