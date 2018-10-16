@@ -4,6 +4,7 @@ import hashlib
 import xml.etree.ElementTree as ET
 import re
 import time
+import random
 app = Flask(__name__)
 
 g_xmlForm = '''
@@ -14,6 +15,18 @@ g_xmlForm = '''
 <MsgType><![CDATA[text]]></MsgType>
 <Content><![CDATA[{Content}]]></Content>
 </xml>'''
+
+class Lottery(object):
+    def __init__(self):
+        self.userList = list()
+    def addUser(self,userName):
+        if self.userList.cout(userName) == 0:
+            self.userList.append(userName)
+    def draw(self):
+        index = random.randint(0,len(self.userList)-1)
+        return self.userList[index]
+    def clear(self):
+        del self.userList[:]
 
 class Msg(object):
     def __init__(self):
