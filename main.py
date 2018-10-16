@@ -2,7 +2,67 @@ from flask import Flask
 from flask import request
 import hashlib
 import xml.etree.ElementTree as ET
+import re
+import time
 app = Flask(__name__)
+
+g_xmlForm = '<xml><ToUserName><![CDATA[{ToUserName}]]></ToUserName>\n<FromUserName><![CDATA[{FromUserName}]]></FromUserName>\n<CreateTime>{CreateTime}</CreateTime>\n<Content><![CDATA[{Content}]]></Content>\n</xml>'
+
+class Msg(object):
+    def __init__(self):
+        pass
+    def __init__(self,msgHead):
+        self.msgHead = msgHead
+    def reply(self):
+        return 'success'
+
+class TextMsg(Msg):
+    def __init__(self,xmlElement,msgHead):
+        self.content = xmlElement.text.encode('raw_unicode_escape').decode('utf-8')
+        self.msgHead = msgHead
+    def isDefined(self):
+        pattern = re.compile(r'\[[A-Z]+\]')
+        match = pattern.search(self.content)
+        if match:
+            self.define = match.group()
+            print("It's a defined msg")
+            return True
+        else:
+            print("It's a undefined msg")
+            return False
+    def reply(self):
+        if self.isDefined():
+            if self.define == '[CJ]':
+                msgDict = dict()
+                msgDict['ToUserName'] = self.msgHead.getFromUserName()
+                msgDict['FromUserName'] = self.msgHead.getToUserName()
+                msgDict['CreateTime'] = int(time.time())
+                msgDict['Content'] = '感谢您的参与,我们将在稍后开奖'
+                return g_xmlForm.format(**msgDict)
+        return 'success'
+        
+
+class MsgHead(object):
+    def __init__(self,xmlData,):
+        self.xmlData = xmlData
+        self.toUserName = xmlData.find('ToUserName').text
+        self.fromUserName = xmlData.find('FromUserName').text
+        self.createTime = xmlData.find('CreateTime').text
+        self.msgType = xmlData.find('MsgType').text
+        self.msgId = xmlData.find('MsgId').text
+    def getToUserName(self):
+        return self.toUserName
+    def getFromUserName(self):
+        return self.fromUserName
+    def getCreateTime(self):
+        return self.createTime
+    def getMsgType(self):
+        return self.msgType
+    def getMsgId(self):
+        return self.msgId
+    def getMsg(self):
+        if self.msgType == 'text':
+            return TextMsg(self.xmlData.find('Content'),self)
 
 @app.route("/")
 def hello():
@@ -10,15 +70,10 @@ def hello():
 
 @app.route("/wx", methods=['POST'])
 def wx_post():
-    args = request.args
-    print(args)
     data = request.data
-    print(data)
-    root = ET.fromstring(data)
-    msgtype = root.find('MsgType').text
-    if msgtype == 'text':
-        print('收到文本消息:'+ root.find('Content').text)
-    return 'success'
+    msgHead = MsgHead(ET.fromstring(data))
+    msg = msgHead.getMsg()
+    return msg.reply();
     
 @app.route("/wx", methods=['GET'])
 def handle():
